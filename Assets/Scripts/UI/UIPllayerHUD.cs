@@ -13,17 +13,8 @@ public class UIPllayerHUD : MonoBehaviour
 
 	private void Start()
 	{
-		_EM = World.DefaultGameObjectInjectionWorld.EntityManager;
-		var entities = _EM.GetAllEntities();
-
-		for (int i = 0; i < entities.Length; i++)
-		{
-			if (_EM.HasComponent<PlayerTag>(entities[i]))
-			{
-				_player = entities[i];
-				break;
-			}
-		}
+		_EM = GameRegistry.EM;
+		_player = GameRegistry.Player;
 	}
 
 	private void Update()

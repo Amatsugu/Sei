@@ -13,38 +13,32 @@ public class PlayerMovementSystem : ComponentSystem
 	private Camera _camera;
 	private Transform _camTransform;
 	private bool isDead = false;
-
-	protected override void OnCreate()
-	{
-		base.OnCreate();
-	}
+	private Entity _playerGun;
 
 	protected override void OnStartRunning()
 	{
 		base.OnStartRunning();
 		_camera = Camera.main;
-		Cursor.visible = false;
-		Cursor.lockState = CursorLockMode.Locked;
 		_camTransform = _camera.transform;
 		_camTransform.rotation = quaternion.identity;
+		_playerGun = GameRegistry.PlayerGun;
 	}
 
 	protected override void OnUpdate()
 	{
 		if(isDead)
 			return;
-		Entities.WithNone<PhysicsMass>().WithAll<PlayerTag>().ForEach((Entity e) =>
+		Entities.WithNone<Frozen>().WithNone<PhysicsMass>().WithAll<PlayerTag>().ForEach((Entity e) =>
 		{
 			var prop = MassProperties.UnitSphere;
 			var mass = PhysicsMass.CreateDynamic(prop, 1);
 			mass.InverseInertia = 0;
 			PostUpdateCommands.AddComponent(e, mass);
 			PostUpdateCommands.AddComponent<PhysicsVelocity>(e);
-			Debug.Log("Mass Added");
 		});
 
 		//Existance Cost
-		Entities.WithAllReadOnly<PlayerTag, PlayerLifeCost>().ForEach((ref Health h, ref PlayerLifeCost cost) =>
+		Entities.WithNone<Frozen>().WithAllReadOnly<PlayerTag, PlayerLifeCost>().ForEach((ref Health h, ref PlayerLifeCost cost) =>
 		{
 			h.Value -= Time.DeltaTime * cost.Value;
 			h.Value = math.max(0, h.Value);
@@ -52,25 +46,10 @@ public class PlayerMovementSystem : ComponentSystem
 				isDead = true;
 		});
 
-		Entities.WithAllReadOnly<PlayerTag, LookSpeed>().ForEach((ref Rotation r, ref LookSpeed sensitivity) =>
+		
+
+		Entities.WithNone<Frozen>().WithAllReadOnly<PlayerTag, PhysicsMass, MoveSpeed, PlayerLifeCost>().ForEach((ref Translation t, ref Rotation r, ref MoveSpeed speed, ref PhysicsVelocity v, ref PlayerLifeCost cost, ref Health health) =>
 		{
-			var mouseMove = new float2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
-			var camRot = _camTransform.rotation.eulerAngles;
-
-			camRot.y += mouseMove.x * sensitivity.Value.x;
-			camRot.x -= mouseMove.y * sensitivity.Value.y;
-			camRot.z = 0;
-
-			camRot = math.radians(camRot);
-
-			_camTransform.rotation = quaternion.Euler(camRot);
-
-			r.Value = quaternion.Euler(new float3(0, camRot.y, 0));
-		});
-
-		Entities.WithAllReadOnly<PlayerTag, PhysicsMass, MoveSpeed, PlayerLifeCost>().ForEach((ref Translation t, ref Rotation r, ref MoveSpeed speed, ref PhysicsVelocity v, ref PlayerLifeCost cost, ref Health health) =>
-		{
-			_camTransform.position = t.Value + new float3(0,.5f,0);
 			var vel = new float3();
 
 
@@ -103,6 +82,31 @@ public class PlayerMovementSystem : ComponentSystem
 			health.Value = math.max(0, health.Value);
 
 			v.Linear = math.rotate(r.Value, vel);
+		});
+
+
+		//Camera
+		Entities.WithAllReadOnly<PlayerTag, LookSpeed>().ForEach((ref Rotation r, ref LookSpeed sensitivity) =>
+		{
+			if (GameRegistry.UpgradePanel.IsOpen)
+				return;
+			var mouseMove = new float2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+			var camRot = _camTransform.rotation.eulerAngles;
+
+			camRot.y += mouseMove.x * sensitivity.Value.x;
+			camRot.x -= mouseMove.y * sensitivity.Value.y;
+			if(camRot.x > 90 && camRot.x < 180)
+				camRot.x = 90;
+			if (camRot.x < 270 && camRot.x > 180)
+				camRot.x = 270;
+			camRot.z = 0;
+
+			camRot = math.radians(camRot);
+			var camQ = quaternion.Euler(camRot);
+			_camTransform.rotation = camQ;
+			r.Value = quaternion.Euler(new float3(0, camRot.y, 0));
+
+			
 		});
 	}
 }

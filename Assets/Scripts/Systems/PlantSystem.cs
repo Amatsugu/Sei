@@ -14,10 +14,12 @@ public class PlantSystem : ComponentSystem
 	public float energyLevel;
 	public const int maxResourceLevel = 100;
 
+	private float _lastFrameEnergy;
+
 	protected override void OnCreate()
 	{
 		base.OnCreate();
-		waterLevel = energyLevel = maxResourceLevel;
+		_lastFrameEnergy = waterLevel = energyLevel = maxResourceLevel;
 	}
 
 	protected override void OnUpdate()
@@ -42,25 +44,34 @@ public class PlantSystem : ComponentSystem
 				isDead = true;
 				return;
 			}
-			var eUsed = eDrain.Value * Time.DeltaTime;
-			var wUsed = wDrain.Value * Time.DeltaTime;
+			var eUsed = eDrain.Value;
+			var wUsed = wDrain.Value;
+			var growthAmmount = 0f;
 
-			if (energyLevel > 0 && waterLevel > 0 && plantHealth < 100)
+			if (energyLevel > 0)
+				growthAmmount += (wUsed + eUsed);
+			if (energyLevel > _lastFrameEnergy)
+				growthAmmount += eUsed;
+			else
 			{
-				plantHealth += (eUsed + wUsed) * growthRate.Value;
-				plantHealth = math.min(plantHealth, 100);
-				energyLevel -= eUsed;
+				if (plantHealth > 100)
+				{
+					growthAmmount = 0;
+				}
 			}
-			if (energyLevel >= maxResourceLevel && waterLevel > 0)
-			{
-				plantHealth += eUsed * growthRate.Value;
-				plantHealth = math.min(plantHealth, 200);
-				energyLevel -= eUsed;
-			}
-
 			if(waterLevel <= 0)
-				plantHealth -= wUsed;
-			waterLevel -= wUsed;
+			{
+				growthAmmount = -wUsed;
+			}
+
+
+			waterLevel -= (wUsed * math.abs(growthAmmount)) * Time.DeltaTime;
+			energyLevel -= (eUsed * math.abs(growthAmmount)) * Time.DeltaTime;
+
+			plantHealth += growthAmmount * Time.DeltaTime * growthRate.Value;
+
+			_lastFrameEnergy = energyLevel;
+
 			energyLevel = math.max(energyLevel, 0);
 			waterLevel = math.max(waterLevel, 0);
 			plantHealth = math.max(plantHealth, 0);

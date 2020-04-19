@@ -43,10 +43,11 @@ public class CollisionSystem : JobComponentSystem
             if (plant.isDead)
                 return;
             var h = health[player];
-            h.Value -= dt;
+            var healthToTake = 10;
+            h.Value -= healthToTake * dt;
             h.Value = math.clamp(h.Value, 0, h.maxHealth);
             health[player] = h;
-            plant.energyLevel += dt * 2;
+            plant.energyLevel += healthToTake * dt * 2;
         }
     }
 
