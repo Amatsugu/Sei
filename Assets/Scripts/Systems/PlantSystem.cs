@@ -50,7 +50,7 @@ public class PlantSystem : ComponentSystem
 
 			if (energyLevel > 0)
 				growthAmmount += (wUsed + eUsed);
-			if (energyLevel > _lastFrameEnergy)
+			if (energyLevel > _lastFrameEnergy || (energyLevel > maxResourceLevel/20 && waterLevel > maxResourceLevel/2) )
 				growthAmmount += eUsed;
 			else
 			{

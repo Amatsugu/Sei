@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Entities;
@@ -6,13 +7,14 @@ using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 [BurstCompile]
 public class PlayerMovementSystem : ComponentSystem
 {
 	private Camera _camera;
 	private Transform _camTransform;
-	private bool isDead = false;
 	private Entity _playerGun;
 
 	protected override void OnStartRunning()
@@ -20,16 +22,42 @@ public class PlayerMovementSystem : ComponentSystem
 		base.OnStartRunning();
 		_camera = Camera.main;
 		_camTransform = _camera.transform;
-		_camTransform.rotation = quaternion.identity;
-		_playerGun = GameRegistry.PlayerGun;
+		//_camTransform.rotation = quaternion.identity;
+
+	}
+
+
+	private void DestroyAllEntities()
+	{
+		var e = GameRegistry.EM.GetAllEntities();
+		for (int i = 0; i < e.Length; i++)
+		{
+			GameRegistry.EM.DestroyEntity(e);
+		}
 	}
 
 	protected override void OnUpdate()
 	{
-		if(isDead)
+		if (SceneManager.GetActiveScene().buildIndex != 1)
 			return;
+		if (_camTransform == null)
+			OnStartRunning();
+		if(GameRegistry.IsDead)
+		{
+			if (Input.GetKeyDown(KeyCode.Return))
+			{
+				var scene = SceneManager.GetActiveScene();
+				DestroyAllEntities();
+				Debug.Log("Reload");
+				SceneManager.LoadScene(2);
+				OnStartRunning();
+				//SceneManager.UnloadSceneAsync(scene.buildIndex);
+			}
+			return;
+		}
 		Entities.WithNone<Frozen>().WithNone<PhysicsMass>().WithAll<PlayerTag>().ForEach((Entity e) =>
 		{
+			GameRegistry.INST.Init();
 			var prop = MassProperties.UnitSphere;
 			var mass = PhysicsMass.CreateDynamic(prop, 1);
 			mass.InverseInertia = 0;
@@ -43,7 +71,10 @@ public class PlayerMovementSystem : ComponentSystem
 			h.Value -= Time.DeltaTime * cost.Value;
 			h.Value = math.max(0, h.Value);
 			if(h.Value <= 0)
-				isDead = true;
+			{
+				GameRegistry.DeathMessage.SetActive(true);
+				GameRegistry.IsDead = true;
+			}
 		});
 
 		
@@ -52,32 +83,35 @@ public class PlayerMovementSystem : ComponentSystem
 		{
 			var vel = new float3();
 
+			if (!GameRegistry.IsDead)
+			{
+				//TODO: Switch to Input System
+				if (Input.GetKey(KeyCode.A))
+				{
+					vel.x = -speed.Value;
+				}
+				else if (Input.GetKey(KeyCode.D))
+				{
+					vel.x = speed.Value;
+				}
 
-			//TODO: Switch to Input System
-			if(Input.GetKey(KeyCode.A))
-			{
-				vel.x = -speed.Value;
-			}else if(Input.GetKey(KeyCode.D))
-			{
-				vel.x = speed.Value;
-			}
+				if (Input.GetKey(KeyCode.S))
+				{
+					vel.z = -speed.Value;
+				}
+				else if (Input.GetKey(KeyCode.W))
+				{
+					vel.z = speed.Value;
+				}
 
-			if (Input.GetKey(KeyCode.S))
-			{
-				vel.z = -speed.Value;
-			}
-			else if (Input.GetKey(KeyCode.W))
-			{
-				vel.z = speed.Value;
-			}
+				if (!vel.Equals(0))
+					health.Value -= cost.Value * Time.DeltaTime;
 
-			if(!vel.Equals(0))
-				health.Value -= cost.Value * Time.DeltaTime;
-
-			if (Input.GetKey(KeyCode.LeftShift))
-			{
-				health.Value -= cost.Value * Time.DeltaTime;
-				vel.z *= 2;
+				if (Input.GetKey(KeyCode.LeftShift))
+				{
+					health.Value -= cost.Value * Time.DeltaTime * 0.5f;
+					vel.z *= 2;
+				}
 			}
 			health.Value = math.max(0, health.Value);
 

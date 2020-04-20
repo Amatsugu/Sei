@@ -26,5 +26,5 @@ public class UpgradeBase : ScriptableObject
 		return upgraded;
 	}
 
-	public virtual int GetUpgradeCost(int level) => cost + (costPerLevel + level);
+	public virtual int GetUpgradeCost(int level) => cost + (costPerLevel * level);
 }

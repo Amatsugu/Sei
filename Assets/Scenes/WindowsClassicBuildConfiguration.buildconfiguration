@@ -1,0 +1,36 @@
+{
+    "Dependencies": [
+    ],
+    "Components": [
+        {
+            "$type": "Unity.Build.Common.GeneralSettings, Unity.Build.Common",
+            "ProductName": "Sei",
+            "CompanyName": "Amatsugu"
+        },
+        {
+            "$type": "Unity.Build.Common.SceneList, Unity.Build.Common",
+            "$version": 1,
+            "BuildCurrentScene": true,
+            "SceneInfos": [
+                {
+                    "Scene": "GlobalObjectId_V1-1-c7a332b9afe0cdc4680d3179488ccca1-102900000-0",
+                    "AutoLoad": true
+                }
+            ]
+        },
+        {
+            "$type": "Unity.Build.Classic.ClassicBuildProfile, Unity.Build.Classic",
+            "Target": 5,
+            "Configuration": 3,
+            "Pipeline": "GlobalObjectId_V1-1-361b838e5e647514189a36ad6ebc27ba-93214019566545601-0",
+            "ExcludedAssemblies": [
+            ]
+        },
+        {
+            "$type": "Unity.Build.Classic.ClassicScriptingSettings, Unity.Build.Classic",
+            "ScriptingBackend": 0,
+            "Il2CppCompilerConfiguration": 1,
+            "UseIncrementalGC": false
+        }
+    ]
+}

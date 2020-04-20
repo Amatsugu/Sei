@@ -12,11 +12,17 @@ public class UIUpgradePanel : UIPanel
 
 	private int[] _upgradeLevels;
 	private UIUpgradeButton[] _buttons;
+	private bool _hasInit = false;
 
 	protected override void Start()
 	{
 		base.Start();
 		GameRegistry.SetUpgradePanel(this);
+	}
+
+	protected void Init()
+	{
+		_hasInit = true;
 		_upgradeLevels = new int[upgrades.Length];
 		CreateButtons();
 	}
@@ -49,18 +55,23 @@ public class UIUpgradePanel : UIPanel
 	protected override void Update()
 	{
 		base.Update();
-		if (Input.GetKeyUp(KeyCode.Tab))
+		if (!_hasInit || !GameRegistry.EM.Exists(GameRegistry.Player))
+			Init();
+		if (Input.GetKeyDown(KeyCode.Tab))
 			Hide();
+		UpdateButtonStates();
 	}
 
 	public override void Show()
 	{
 		base.Show();
+		Debug.Log("Show");
 		Cursor.visible = true;
 		Cursor.lockState = CursorLockMode.None;
 		if (!GameRegistry.EM.HasComponent<Frozen>(GameRegistry.Player))
 			GameRegistry.EM.AddComponent<Frozen>(GameRegistry.Player);
 	}
+
 
 	private void UpdateButtonStates()
 	{
@@ -72,12 +83,14 @@ public class UIUpgradePanel : UIPanel
 				_buttons[i].upgradeButton.interactable = false;
 			else
 				_buttons[i].upgradeButton.interactable = true;
+			_buttons[i].upgradeCost.SetText(upgradeCost.ToString());
 		}
 	}
 
 	public override void Hide()
 	{
 		base.Hide();
+		Debug.Log("Hide");
 		Cursor.visible = false;
 		Cursor.lockState = CursorLockMode.Locked;
 		if (GameRegistry.EM.HasComponent<Frozen>(GameRegistry.Player))
